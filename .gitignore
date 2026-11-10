@@ -1,0 +1,5 @@
+genoma
+genoma.exe
+*.o
+.vscode/
+.idea/
