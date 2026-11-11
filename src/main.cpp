@@ -1,43 +1,35 @@
-// Paso 0: verificación del entorno.
-// Comprueba que el compilador funciona y que el archivo FASTA se puede leer.
-// Este main se reemplazará por el menú en el Paso 4.
-
 #include <iostream>
-#include <fstream>
-#include <string>
+#include "Parser.h"
+#include "HashLinear.h"
 using namespace std;
 
-int main(int argc, char* argv[]) {
-    string ruta = (argc > 1) ? argv[1] : "data/HIV2_ALL_2021_env_DNA.2000.fasta";
+int main() {
+    // 1) Parser
+    vector<DNASequence> secuencias = parseFasta("data/HIV2_ALL_2021_env_DNA.2000.fasta");
+    cout << "Secuencias leidas: " << secuencias.size() << "\n\n";
+    if (secuencias.empty()) return 1;
 
-    ifstream archivo(ruta);
-    if (!archivo) {
-        cerr << "No se pudo abrir: " << ruta << "\n";
-        cerr << "Ejecuta el programa desde la carpeta proyecto-genomico/\n";
-        return 1;
+    // 2) Insertar todas en la tabla 1
+    TablaSecuencias tabla;
+    cout << "Insertando en la tabla 1 (tamano inicial " << tabla.capacidad() << ")...\n";
+    for (const DNASequence& s : secuencias)
+        tabla.insertar(s);
+
+    cout << "\nResultado final:\n";
+    cout << "  Elementos       : " << tabla.cantidad() << "\n";
+    cout << "  Capacidad       : " << tabla.capacidad() << "\n";
+    cout << "  Factor de carga : " << tabla.factorCarga() << "\n";
+    cout << "  Rehashes        : " << tabla.rehashes() << "\n";
+    cout << "  Colisiones      : " << tabla.colisiones() << "\n\n";
+
+    // 3) Búsquedas de prueba
+    string pruebas[] = { "MAC.US.x.239.M33262",
+                         "STM.US.89.STM_37_16.M83293",
+                         "NO.EXISTE.123" };
+    for (const string& id : pruebas) {
+        const DNASequence* r = tabla.buscar(id);
+        if (r) cout << "  Encontrado : " << id << " (" << r->sequence.size() << " nt)\n";
+        else   cout << "  No existe  : " << id << "\n";
     }
-
-    string linea, primerId;
-    long totalSecuencias = 0, primeraLongitud = 0, noACGT = 0;
-
-    while (getline(archivo, linea)) {
-        if (!linea.empty() && linea.back() == '\r') linea.pop_back(); // archivo viene con CRLF
-        if (linea.empty()) continue;
-
-        if (linea[0] == '>') {
-            totalSecuencias++;
-            if (totalSecuencias == 1) primerId = linea.substr(1);
-        } else {
-            if (totalSecuencias == 1) primeraLongitud += linea.size();
-            for (char c : linea)
-                if (c != 'A' && c != 'C' && c != 'G' && c != 'T') noACGT++;
-        }
-    }
-
-    cout << "Compilador y lectura OK\n";
-    cout << "Secuencias encontradas : " << totalSecuencias << "\n";
-    cout << "Primer ID              : " << primerId << "\n";
-    cout << "Longitud de la primera : " << primeraLongitud << " nt\n";
-    cout << "Caracteres no ACGT     : " << noACGT << " (deben ignorarse al contar k-mers)\n";
     return 0;
 }
