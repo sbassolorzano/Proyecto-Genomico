@@ -33,8 +33,11 @@ const int    TAM_INICIAL_TABLA1 = 10;
 const double UMBRAL_REHASH      = 0.75;
 //
 // 3) Tabla 2 (double hashing): tamaño = siguientePrimo(4^k).
-//    h1(x) = x mod m          h2(x) = 1 + (x mod (m - 1))   (nunca 0)
+//    h1(kmer) = hash polinomial (h*31 + letra) mod m   -> posición inicial
+//    h2(x)    = 1 + (x mod (m - 1))   (nunca 0)        -> tamaño del salto
 //    x = k-mer codificado en base 4 (A=0, C=1, G=2, T=3).
+//    No se usa h1 = x mod m porque x < 4^k < m: cada k-mer tendría su
+//    casilla propia y nunca habría colisiones (direccionamiento directo).
 //
 // 4) Grafo: pares SIN solapamiento, arista entre todo par i<j con
 //    peso 1/(j-i)^beta; aristas repetidas se SUMAN.
