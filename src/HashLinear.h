@@ -1,4 +1,4 @@
-// Parte b1) — Alumno 1
+
 // Tabla hash con LINEAR PROBING.  Clave = id, valor = DNASequence.
 #pragma once
 #include "modulos.h"

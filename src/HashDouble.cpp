@@ -1,6 +1,5 @@
 #include "HashDouble.h"
 
-// TODO (Alumno 1): implementar en el Paso 3
 
 TablaKmers::TablaKmers(int k)
     : kLen(k), n(0), total(0), totalDescartados(0), totalColisiones(0) {
@@ -12,7 +11,7 @@ TablaKmers::TablaKmers(int k)
 }
 
 
-// Codificar los k-mers -> numero en base 4 (ATG = 0*16 + 3*4 + 2 = 14)
+// Codifica los k-mers -> numero en base 4 (ATG = 0*16 + 3*4 + 2 = 14)
 // Devuelve -1 si no es las letras A C G T
 long TablaKmers::codificar(const string & kmer) const
 {
@@ -45,7 +44,7 @@ int TablaKmers::h2(long x) const
     return 1 + (int)(x % (m - 1));
 }
 
-// Insertar : si el kmer existe se suma 1
+// Metodo Insertar : si el kmer existe se suma 1
 void TablaKmers::insertar(const string &kmer)
 {
     long x = codificar(kmer);
@@ -53,7 +52,7 @@ void TablaKmers::insertar(const string &kmer)
     {
         totalDescartados++;
         return;
-    } // letra rara: se descarta
+    } // Alguna letra rara se descarta
 
     int m = (int)claves.size();
     int pos = h1(kmer);
@@ -70,7 +69,7 @@ void TablaKmers::insertar(const string &kmer)
             return;
         }
         if (claves[pos] == kmer)
-        { // ya existe: sumar 1
+        { // Su ya existe se suma 1
             conteos[pos]++;
             total++;
             return;
@@ -79,7 +78,7 @@ void TablaKmers::insertar(const string &kmer)
         pos = (pos + salto) % m; // saltar
     }
 }
-// Contar : Se realiza un deslizancia 1 en 1 en la secuencia
+// En el metodo contar Se realiza un deslizancia 1 en 1 en la secuencia
 void TablaKmers::contarSecuencia(const string &seq)
 {
     if ((int)seq.size() < kLen)
