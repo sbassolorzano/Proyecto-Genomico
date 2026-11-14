@@ -19,27 +19,9 @@ using KmerCount = pair<string, int>; // par de kmer y conteo
 // Formato para la parte d
 using Matriz= vector<vector<double>>; //Matriz 16 x 16
 
-// ============================================================
-//  DECISIONES ACORDADAS (justificarlas en el informe)
-// ============================================================
-// 1) Caracteres que no son A/C/G/T (R, Y, W, K, M, N...):
-//    se descarta todo k-mer o par que los contenga.
-//
-// 2) Tabla 1 (linear probing): tamaño inicial 10.
-//    Con direccionamiento abierto el factor de carga nunca supera 1,
-//    así que se redimensiona cuando alfa >= UMBRAL_REHASH.
-//    Nuevo tamaño = siguientePrimo(2 * elementos)  => alfa queda ~0.5
+
 const int    TAM_INICIAL_TABLA1 = 10;
 const double UMBRAL_REHASH      = 0.75;
-//
-// 3) Tabla 2 (double hashing): tamaño = siguientePrimo(4^k).
-//    h1(x) = x mod m          h2(x) = 1 + (x mod (m - 1))   (nunca 0)
-//    x = k-mer codificado en base 4 (A=0, C=1, G=2, T=3).
-//
-// 4) Grafo: pares SIN solapamiento, arista entre todo par i<j con
-//    peso 1/(j-i)^beta; aristas repetidas se SUMAN.
-//    Si la longitud es impar, se ignora la última base.
-
 
 // Utilidades compartidas entre los modulos
 
