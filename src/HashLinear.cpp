@@ -7,7 +7,7 @@ TablaSecuencias::TablaSecuencias()
       n(0), totalColisiones(0), totalRehashes(0) {}
 
 
-// Funcion Hash : Convierte el ID en una posicion
+// La Funcion Hash cnvierte el ID en una posicion
 
 int TablaSecuencias::hashId(const string& id ) const {
     unsigned long long h = 0;
@@ -35,7 +35,7 @@ void TablaSecuencias::colocar(const DNASequence& s) {
     n++;
 }
 
-//Insertar : coloca y si es mayor a 0.75 se agranda la tabla
+//La funcion insertar coloca el numero y si es mayor a 0.75 se agranda la tabla
 
 void TablaSecuencias::insertar(const DNASequence& s){
     colocar(s);
@@ -62,8 +62,8 @@ void TablaSecuencias::rehash() {
             colocar(viejaTabla[i]);
 
     totalRehashes++;
-    cout << "  [rehash] " << tamAnterior << " -> " << nuevoTam
-         << "   alfa: " << alfaAnterior << " -> " << factorCarga() << "\n";
+    cout << "[rehash] " << tamAnterior << " -> " << nuevoTam
+         << "alfa: " << alfaAnterior << " -> " << factorCarga() << "\n";
 }
 
 
