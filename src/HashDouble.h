@@ -1,4 +1,4 @@
-// Parte b2) — Alumno 1
+
 // Tabla hash con DOUBLE HASHING.  Clave = k-mer, valor = conteo.
 #pragma once
 #include "modulos.h"
@@ -16,13 +16,23 @@ public:
     int capacidad()  const;
     int distintos()  const;                    // k-mers distintos guardados
 
+    long totalKmers() const;        //K-mers validos
+    long descartados() const;       // k-mers palabras raras (R,Y,N,etc)
+    long colisiones() const;        //Choques al insertar
+
+
+
 private:
-    int kLen;                                  // el valor de k
-    vector<string> claves;                     // los k-mers guardados
-    vector<int>    conteos;                    // cuántas veces aparece cada uno (0 = vacío)
-    int n;                                     // k-mers distintos
+    int kLen;         // el valor de k
+    vector<string> claves;        // los k-mers guardados
+    vector<int>    conteos;          // cuántas veces aparece cada uno (0 = vacío)
+    int n;                     // k-mers distintos
+    long total;                    //k-mers validos totales
+    long totalDescartados;       //k-mers invalidos
+    long totalColisiones;           //choques
+
 
     long codificar(const string& kmer) const;  // k-mer -> número en base 4
-    int  h1(long x) const;                     // dónde empezar:  x mod m
-    int  h2(long x) const;                     // tamaño del salto: 1 + x mod (m-1)
+    int  h1(const string& kmer) const;  // dónde empezar:  x mod m
+    int  h2(long x) const;     // tamaño del salto: 1 + x mod (m-1)
 };

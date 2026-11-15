@@ -1,43 +1,45 @@
-// Paso 0: verificación del entorno.
-// Comprueba que el compilador funciona y que el archivo FASTA se puede leer.
-// Este main se reemplazará por el menú en el Paso 4.
-
 #include <iostream>
-#include <fstream>
-#include <string>
+#include "Parser.h"
+#include "HashLinear.h"
+#include "HashDouble.h"
 using namespace std;
 
-int main(int argc, char* argv[]) {
-    string ruta = (argc > 1) ? argv[1] : "data/HIV2_ALL_2021_env_DNA.2000.fasta";
+int main() {
+    // 1) Parser + tabla 1
+    vector<DNASequence> secuencias = parseFasta("data/HIV2_ALL_2021_env_DNA.2000.fasta");
+    TablaSecuencias tabla;
+    for (const DNASequence& s : secuencias) tabla.insertar(s);
+    cout << "\nTabla 1 lista: " << tabla.cantidad() << " secuencias\n\n";
 
-    ifstream archivo(ruta);
-    if (!archivo) {
-        cerr << "No se pudo abrir: " << ruta << "\n";
-        cerr << "Ejecuta el programa desde la carpeta proyecto-genomico/\n";
-        return 1;
+    // 2) Elegir una secuencia por ID (usa la tabla 1)
+    string id = "MAC.US.x.239.M33262";
+    const DNASequence* s = tabla.buscar(id);
+    if (!s) { cout << "No existe " << id << "\n"; return 1; }
+    cout << "Secuencia: " << s->id << " (" << s->sequence.size() << " nt)\n\n";
+
+    // 3) Contar k-mers con la tabla 2, para varios k
+    int valoresK[] = {3, 5, 8};
+    for (int k : valoresK) {
+        TablaKmers t(k);
+        t.contarSecuencia(s->sequence);
+        cout << "k = " << k << "\n";
+        cout << "  Capacidad (primo >= 4^k) : " << t.capacidad() << "\n";
+        cout << "  Esperados (L - k + 1)    : " << s->sequence.size() - k + 1 << "\n";
+        cout << "  Contados + descartados   : " << t.totalKmers() << " + " << t.descartados()
+             << " = " << t.totalKmers() + t.descartados() << "\n";
+        cout << "  k-mers distintos         : " << t.distintos() << "\n";
+        cout << "  Colisiones               : " << t.colisiones() << "\n\n";
     }
 
-    string linea, primerId;
-    long totalSecuencias = 0, primeraLongitud = 0, noACGT = 0;
+    // 4) Búsquedas con k = 3
+    TablaKmers t3(3);
+    t3.contarSecuencia(s->sequence);
+    string pruebas[] = {"ATG", "GGG", "CGC", "ANT"};
+    cout << "Busquedas (k = 3):\n";
+    for (const string& km : pruebas)
+        cout << "  " << km << " -> " << t3.buscar(km) << " veces\n";
 
-    while (getline(archivo, linea)) {
-        if (!linea.empty() && linea.back() == '\r') linea.pop_back(); // archivo viene con CRLF
-        if (linea.empty()) continue;
-
-        if (linea[0] == '>') {
-            totalSecuencias++;
-            if (totalSecuencias == 1) primerId = linea.substr(1);
-        } else {
-            if (totalSecuencias == 1) primeraLongitud += linea.size();
-            for (char c : linea)
-                if (c != 'A' && c != 'C' && c != 'G' && c != 'T') noACGT++;
-        }
-    }
-
-    cout << "Compilador y lectura OK\n";
-    cout << "Secuencias encontradas : " << totalSecuencias << "\n";
-    cout << "Primer ID              : " << primerId << "\n";
-    cout << "Longitud de la primera : " << primeraLongitud << " nt\n";
-    cout << "Caracteres no ACGT     : " << noACGT << " (deben ignorarse al contar k-mers)\n";
+    // 5) Lo que se entrega al heap
+    cout << "\nobtenerTodos() entrega " << t3.obtenerTodos().size() << " pares (k-mer, conteo)\n";
     return 0;
 }
