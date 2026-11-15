@@ -36,7 +36,7 @@ void imprimirMatriz(const Matriz& matriz) {
     std::cout << std::setw(6) << "";
 
     for (std::size_t j = 0; j < matriz.size(); ++j) {
-        std::cout << std::setw(7) << DINUCLEOTIDOS[j];
+        std::cout << " |" << std::setw(7) << DINUCLEOTIDOS[j];
     }
     std::cout << '\n';
 
@@ -44,7 +44,7 @@ void imprimirMatriz(const Matriz& matriz) {
         std::cout << std::setw(6) << DINUCLEOTIDOS[i];
 
         for (std::size_t j = 0; j < matriz[i].size(); ++j) {
-            std::cout << std::setw(7) << matriz[i][j];
+            std::cout << " |" << std::setw(7) << matriz[i][j];
         }
         std::cout << '\n';
      }
