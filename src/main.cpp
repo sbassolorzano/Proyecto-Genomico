@@ -1,45 +1,184 @@
+#include <cmath>
 #include <iostream>
-#include "Parser.h"
-#include "HashLinear.h"
+#include <sstream>
+#include <string>
+
 #include "HashDouble.h"
-using namespace std;
+#include "HashLinear.h"
+#include "Parser.h"
+#include "alumno2/Grafo.h"
+#include "alumno2/MaxHeap.h"
 
-int main() {
-    // 1) Parser + tabla 1
-    vector<DNASequence> secuencias = parseFasta("data/HIV2_ALL_2021_env_DNA.2000.fasta");
-    TablaSecuencias tabla;
-    for (const DNASequence& s : secuencias) tabla.insertar(s);
-    cout << "\nTabla 1 lista: " << tabla.cantidad() << " secuencias\n\n";
+namespace {
 
-    // 2) Elegir una secuencia por ID (usa la tabla 1)
-    string id = "MAC.US.x.239.M33262";
-    const DNASequence* s = tabla.buscar(id);
-    if (!s) { cout << "No existe " << id << "\n"; return 1; }
-    cout << "Secuencia: " << s->id << " (" << s->sequence.size() << " nt)\n\n";
-
-    // 3) Contar k-mers con la tabla 2, para varios k
-    int valoresK[] = {3, 5, 8};
-    for (int k : valoresK) {
-        TablaKmers t(k);
-        t.contarSecuencia(s->sequence);
-        cout << "k = " << k << "\n";
-        cout << "  Capacidad (primo >= 4^k) : " << t.capacidad() << "\n";
-        cout << "  Esperados (L - k + 1)    : " << s->sequence.size() - k + 1 << "\n";
-        cout << "  Contados + descartados   : " << t.totalKmers() << " + " << t.descartados()
-             << " = " << t.totalKmers() + t.descartados() << "\n";
-        cout << "  k-mers distintos         : " << t.distintos() << "\n";
-        cout << "  Colisiones               : " << t.colisiones() << "\n\n";
+template <typename T>
+bool leerNumero(const char* mensaje, T& valor) {
+    std::cout << mensaje;
+    std::string linea;
+    if (!std::getline(std::cin, linea)) {
+        return false;
     }
 
-    // 4) Búsquedas con k = 3
-    TablaKmers t3(3);
-    t3.contarSecuencia(s->sequence);
-    string pruebas[] = {"ATG", "GGG", "CGC", "ANT"};
-    cout << "Busquedas (k = 3):\n";
-    for (const string& km : pruebas)
-        cout << "  " << km << " -> " << t3.buscar(km) << " veces\n";
+    std::istringstream entrada(linea);
+    if (entrada >> valor) {
+        entrada >> std::ws;
+        if (entrada.eof()) {
+            return true;
+        }
+    }
 
-    // 5) Lo que se entrega al heap
-    cout << "\nobtenerTodos() entrega " << t3.obtenerTodos().size() << " pares (k-mer, conteo)\n";
-    return 0;
+    std::cout << "Ingresa un numero valido.\n";
+    return false;
+}
+
+void imprimirConteos(const std::vector<KmerCount>& conteos) {
+    if (conteos.empty()) {
+        std::cout << "No hay k-mers validos para mostrar.\n";
+        return;
+    }
+
+    std::cout << "Patron\tFrecuencia\n";
+    for (const KmerCount& par : conteos) {
+        std::cout << par.first << '\t' << par.second << '\n';
+    }
+}
+
+const DNASequence* buscarSecuencia(const TablaSecuencias& tabla) {
+    std::cout << "ID de la secuencia (opcion 1 para ver los IDs): ";
+    std::string id;
+    if (!std::getline(std::cin, id)) {
+        return nullptr;
+    }
+
+    const DNASequence* secuencia = tabla.buscar(id);
+    if (!secuencia) {
+        std::cout << "No se encontro el ID: " << id << '\n';
+    }
+    return secuencia;
+}
+
+void consultarKmers(const DNASequence& secuencia, bool soloTop) {
+    // La tabla reserva al menos 4^k casillas.
+    constexpr int maxK = 10;
+    int k;
+    if (!leerNumero("Longitud k del patron (1 a 10): ", k)) {
+        return;
+    }
+    if (k < 1 || k > maxK || static_cast<std::size_t>(k) > secuencia.sequence.size()) {
+        std::cout << "k debe estar entre 1 y 10 y caber en la secuencia.\n";
+        return;
+    }
+
+    int n = 0;
+    if (soloTop) {
+        if (!leerNumero("Cantidad n de patrones: ", n)) {
+            return;
+        }
+        if (n < 1) {
+            std::cout << "n debe ser mayor que cero.\n";
+            return;
+        }
+    }
+
+    TablaKmers tabla(k);
+    tabla.contarSecuencia(secuencia.sequence);
+
+    if (soloTop) {
+        imprimirConteos(topN(tabla.obtenerTodos(), n));
+        return;
+    }
+
+    std::cout << "Patrones distintos: " << tabla.distintos() << '\n'
+              << "Ventanas contadas: " << tabla.totalKmers() << '\n'
+              << "Ventanas descartadas: " << tabla.descartados() << '\n'
+              << "Capacidad: " << tabla.capacidad() << '\n'
+              << "Colisiones: " << tabla.colisiones() << '\n'
+              << "Patron de " << k << " letras (Enter para ver todos): ";
+
+    std::string patron;
+    if (!std::getline(std::cin, patron)) {
+        return;
+    }
+    if (patron.empty()) {
+        imprimirConteos(tabla.obtenerTodos());
+        return;
+    }
+    if (patron.size() != static_cast<std::size_t>(k) ||
+        patron.find_first_not_of("ACGT") != std::string::npos) {
+        std::cout << "Escribe un patron de longitud k con letras A, C, G o T en mayusculas.\n";
+        return;
+    }
+
+    std::cout << patron << " aparece " << tabla.buscar(patron) << " veces.\n";
+}
+
+}  // namespace
+
+int main(int argc, char* argv[]) {
+    const std::string ruta = argc > 1 ? argv[1] : "data/HIV2_ALL_2021_env_DNA.2000.fasta";
+    const std::vector<DNASequence> secuencias = parseFasta(ruta);
+    if (secuencias.empty()) {
+        std::cerr << "No se cargaron secuencias de " << ruta << '\n';
+        return 1;
+    }
+
+    TablaSecuencias tabla;
+    for (const DNASequence& secuencia : secuencias) {
+        tabla.insertar(secuencia);
+    }
+    std::cout << "Registros leidos: " << secuencias.size() << '\n';
+
+    while (std::cin) {
+        std::cout << "\n1. Listar registros del FASTA\n"
+                  << "2. Buscar secuencia por ID\n"
+                  << "3. Contar y consultar k-mers\n"
+                  << "4. Mostrar los n k-mers mas frecuentes\n"
+                  << "5. Imprimir el grafo de 2-mers\n"
+                  << "0. Salir\n"
+                  << "Opcion: ";
+
+        std::string opcion;
+        if (!std::getline(std::cin, opcion) || opcion == "0") {
+            break;
+        }
+
+        if (opcion == "1") {
+            std::cout << "ID\tLongitud\n";
+            for (const DNASequence& secuencia : secuencias) {
+                std::cout << secuencia.id << '\t' << secuencia.sequence.size() << '\n';
+            }
+            continue;
+        }
+
+        if (opcion != "2" && opcion != "3" && opcion != "4" && opcion != "5") {
+            std::cout << "Opcion invalida.\n";
+            continue;
+        }
+
+        const DNASequence* secuencia = buscarSecuencia(tabla);
+        if (!secuencia) {
+            continue;
+        }
+
+        if (opcion == "2") {
+            std::cout << "ID: " << secuencia->id << '\n'
+                      << "Longitud: " << secuencia->sequence.size() << '\n'
+                      << "Secuencia: " << secuencia->sequence << '\n'
+                      << "IDs almacenados: " << tabla.cantidad() << '\n'
+                      << "Capacidad: " << tabla.capacidad() << '\n'
+                      << "Colisiones: " << tabla.colisiones() << '\n'
+                      << "Redimensiones: " << tabla.rehashes() << '\n';
+        } else if (opcion == "5") {
+            double beta;
+            if (leerNumero("Beta (por ejemplo 1): ", beta)) {
+                if (!std::isfinite(beta) || beta < 0.0) {
+                    std::cout << "Beta debe ser un numero finito mayor o igual a cero.\n";
+                } else {
+                    imprimirMatriz(construirGrafo(secuencia->sequence, beta));
+                }
+            }
+        } else {
+            consultarKmers(*secuencia, opcion == "4");
+        }
+    }
 }
